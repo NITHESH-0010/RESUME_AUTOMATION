@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RESUME_AI</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<nav>
+<div class="logo">RESUME_AI</div>
+
+<ul>
+<li><a href="#home">Home</a></li>
+<li><a href="#features">Features</a></li>
+<li><a href="#form">Build Resume</a></li>
+</ul>
+
+<button id="themeToggle">🌙</button>
+</nav>
+
+<section class="hero" id="home">
+
+<h1>Create Professional Resumes in Minutes</h1>
+
+<p>
+Generate ATS-friendly resumes using AI and receive them directly via Email and Telegram.
+</p>
+
+<a href="#form" class="cta">
+Start Building
+</a>
+
+</section>
+
+<section id="features">
+
+<h2>Why RESUME_AI?</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>ATS Optimized</h3>
+<p>Built for recruiter screening systems.</p>
+</div>
+
+<div class="card">
+<h3>AI Powered</h3>
+<p>Professional wording and formatting.</p>
+</div>
+
+<div class="card">
+<h3>Cloud Storage</h3>
+<p>Backed up automatically in Google Drive.</p>
+</div>
+
+</div>
+
+</section>
+
+<section id="form">
+
+<h2>Build Your Resume</h2>
+
+<div class="wizard">
+
+<div class="progress">
+<div class="progress-bar"></div>
+</div>
+<form id="resumeForm">
+
+<div class="step active">
+
+<input name="full_name" placeholder="Full Name" required>
+<input name="email" type="email" placeholder="Email" required>
+<input name="phone" placeholder="Phone">
+
+<button type="button" class="next">
+Next
+</button>
+
+</div>
+
+<div class="step">
+
+<input name="linkedin" placeholder="LinkedIn">
+<input name="github" placeholder="GitHub">
+<input name="portfolio" placeholder="Portfolio">
+
+<button type="button" class="prev">
+Previous
+</button>
+
+<button type="button" class="next">
+Next
+</button>
+
+</div>
+
+<div class="step">
+
+<textarea name="education" placeholder="Education"></textarea>
+
+<textarea name="skills" placeholder="Skills"></textarea>
+
+<button type="button" class="prev">
+Previous
+</button>
+
+<button type="button" class="next">
+Next
+</button>
+
+</div>
+
+<div class="step">
+
+<textarea name="projects" placeholder="Projects"></textarea>
+
+<textarea name="certifications" placeholder="Certifications"></textarea>
+
+<textarea name="internships" placeholder="Internships"></textarea>
+
+<button type="button" class="prev">
+Previous
+</button>
+
+<button type="button" class="next">
+Next
+</button>
+
+</div>
+
+<div class="step">
+
+<textarea name="achievements" placeholder="Achievements"></textarea>
+
+<textarea name="languages" placeholder="Languages"></textarea>
+
+<textarea name="career_objective" placeholder="Career Objective"></textarea>
+
+<button type="button" class="prev">
+Previous
+</button>
+
+<button type="submit" id="submitBtn">
+Generate Resume
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</section>
+
+<div id="loadingScreen" class="hidden">
+<h2>Generating Resume...</h2>
+</div>
+
+<div id="successScreen" class="hidden">
+
+<h1>Success</h1>
+
+<p>✓ Data Saved Successfully</p>
+<p>✓ AI Processing Started</p>
+<p>✓ Resume Template Generated</p>
+<p>✓ Resume Will Be Sent via Email</p>
+<p>✓ Telegram Notification Scheduled</p>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
