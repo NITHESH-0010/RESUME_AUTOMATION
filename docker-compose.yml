@@ -5,6 +5,9 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      GOOGLE_SERVICE_ACCOUNT_FILE: /app/service-account.json
+      GOTENBERG_URL: http://gotenberg:3000
     volumes:
       - ./service-account.json:/app/service-account.json:ro
     depends_on:
@@ -14,5 +17,3 @@ services:
   gotenberg:
     image: gotenberg/gotenberg:8
     restart: unless-stopped
-    # No ports published — only the "app" service talks to it, over the
-    # internal docker-compose network at http://gotenberg:3000

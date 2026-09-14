@@ -1,113 +1,141 @@
-# Resume Automation (Python port of RESUME_AUTOMATION_v3 n8n workflow)
+# Resume AI — Automated Resume Builder
 
-A FastAPI backend that replaces the n8n workflow 1:1, plus the existing
-frontend (`static/index.html`, `style.css`, `script.js`) served from the
-same app — one deployment, one URL, no separate n8n instance to host.
+An end-to-end automation pipeline that takes form input, generates a
+professional ATS-optimized resume using Google Gemini, converts it to a
+polished PDF, and delivers it to the candidate by email — while logging
+every submission to Google Sheets and notifying an admin via Telegram.
 
-## What it does
+Originally prototyped as an n8n workflow, then rebuilt as a standalone
+Python service (FastAPI) for full control over error handling, retries,
+and deployment — with zero dependency on a hosted workflow platform.
 
-1. `POST /webhook/RESUME_BUILDER` receives the form submission
-2. Validates required fields (`full_name`, `email`) — same rules as before
-3. **Responds immediately** with a submission ID (candidate isn't kept waiting)
-4. In the background: logs to Google Sheets → generates resume HTML with
-   Gemini → converts HTML to PDF via Gotenberg → emails the PDF to the
-   candidate → notifies you on Telegram
+## How it works
 
-## 1. Get your 4 credentials
-
-| # | Credential | Where to get it |
-|---|---|---|
-| 1 | **Gemini API key** | [aistudio.google.com](https://aistudio.google.com) → "Get API key" |
-| 2 | **Google service account JSON** | Google Cloud Console → IAM & Admin → Service Accounts → Create → Keys → Add Key (JSON). Then enable the **Google Sheets API** for that project, and **share your Google Sheet** with the service account's email (`...@...iam.gserviceaccount.com`) as an Editor |
-| 3 | **Gmail App Password** | Enable 2FA on the sending Gmail account, then create one at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) |
-| 4 | **Telegram bot token + chat ID** | Message `@BotFather` → `/newbot` → copy the token. Message `@userinfobot` to get your numeric chat ID |
-
-Save the service account JSON as `service-account.json` in this folder
-(it's already gitignored-equivalent via the `.env` pattern — **never commit
-it**).
-
-## 2. Configure environment
-
-```bash
-cp .env.example .env
-# then fill in all 4 credentials in .env
+```
+ Frontend (HTML/CSS/JS)
+        │  POST /webhook/RESUME_BUILDER
+        ▼
+ FastAPI backend  ──▶  responds immediately (202) to the candidate
+        │
+        ▼  (background task)
+ 1. Log submission ──▶ Google Sheets
+ 2. Build prompt   ──▶ Gemini API           → generates resume HTML
+ 3. Convert HTML   ──▶ Gotenberg            → resume PDF
+ 4. Deliver        ──▶ Email (SMTP)  +  Telegram notification (parallel)
 ```
 
-## 3. Run locally (no Docker)
+Each external call (Sheets, Gemini, PDF conversion, Email) has its own
+retry policy and isolated error handling, so a failure in one step is
+logged clearly without silently breaking the rest of the pipeline.
 
-```bash
-pip install -r requirements.txt
+## Features
 
-# You'll also need a local Gotenberg instance for PDF conversion:
-docker run --rm -p 3000:3000 gotenberg/gotenberg:8
-# then in .env set: GOTENBERG_URL=http://localhost:3000
+- **AI-generated resumes** — Gemini rewrites raw form input into a
+  polished, ATS-friendly resume with proper structure and phrasing
+- **Instant response, async processing** — the candidate isn't kept
+  waiting on Gemini/PDF/email; the webhook responds immediately and the
+  rest runs in the background
+- **Automatic PDF generation** — via Gotenberg, self-hosted and free,
+  no per-conversion API costs
+- **Submission logging** — every entry recorded to Google Sheets for
+  tracking and auditing
+- **Dual notification** — candidate gets the resume by email, admin gets
+  a Telegram alert, independently of one another
+- **Config-driven** — all credentials live in `.env`; zero secrets in code
 
-uvicorn app.main:app --reload --port 8000
-```
+## Tech stack
 
-Open `http://localhost:8000` — the frontend and API are served from the
-same place, so the form just works.
+| Layer | Technology |
+|---|---|
+| Backend | Python, FastAPI, httpx |
+| AI generation | Google Gemini API |
+| PDF conversion | Gotenberg (self-hosted, Docker) |
+| Data logging | Google Sheets API (service account) |
+| Notifications | Gmail SMTP, Telegram Bot API |
+| Frontend | Vanilla HTML/CSS/JS (multi-step form) |
+| Resilience | Tenacity (retry/backoff on every external call) |
 
-## 4. Run with Docker Compose (recommended, matches production)
-
-```bash
-docker compose up --build -d
-```
-
-This starts both the app and Gotenberg together, networked internally.
-Visit `http://localhost:8000` (or your server's IP/domain).
-
-## 5. Deploy permanently (Oracle Cloud Free Tier VPS)
-
-1. Spin up an Always Free Ampere A1 instance (Ubuntu), get its public IP
-2. Install Docker + Docker Compose plugin on the VPS
-3. Copy this whole folder to the VPS (`scp` or `git clone`), including your
-   filled-in `.env` and `service-account.json` (upload these separately —
-   don't put real secrets in git)
-4. `docker compose up --build -d`
-5. Point a domain at the VPS IP (A record), then put **Caddy** or **nginx +
-   certbot** in front for automatic free HTTPS — e.g. a minimal Caddy
-   reverse proxy config:
-   ```
-   yourdomain.com {
-       reverse_proxy localhost:8000
-   }
-   ```
-6. Update the DNS-facing URL — no code change needed, since `script.js`
-   now uses a relative path and assumes it's served from the same origin
-   as the API.
-
-## Project layout
+## Project structure
 
 ```
 resume-automation/
 ├── app/
-│   ├── main.py            # FastAPI app, webhook route, static mount
-│   ├── validators.py      # field validation (port of n8n Code node)
-│   ├── gemini_client.py   # prompt + Gemini call + HTML extraction
-│   ├── pdf_client.py      # HTML -> PDF via Gotenberg
-│   ├── sheets_client.py   # Google Sheets logging (service account)
-│   ├── email_client.py    # Gmail send via SMTP app password
-│   ├── telegram_client.py # admin notification
-│   ├── pipeline.py        # orchestrates the background steps
-│   └── config.py          # loads all env vars in one place
-├── static/                # your existing frontend, served as-is
-├── docker-compose.yml     # app + gotenberg containers
-├── Dockerfile
+│   ├── main.py             # FastAPI app, webhook route, static mount
+│   ├── validators.py       # input validation & normalization
+│   ├── gemini_client.py    # prompt construction + Gemini API call
+│   ├── sheets_client.py    # Google Sheets logging
+│   ├── pdf_client.py       # HTML → PDF via Gotenberg
+│   ├── email_client.py     # resume delivery via SMTP
+│   ├── telegram_client.py  # admin notification
+│   ├── pipeline.py         # orchestrates the full submission flow
+│   └── config.py           # centralized environment config
+├── static/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
 ├── requirements.txt
-└── .env.example
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+└── .gitignore
 ```
 
-## Notes on what changed vs. the n8n version
+## Getting started
 
-- **Gmail/Sheets auth**: swapped OAuth2 for a Gmail App Password + a Google
-  service account. Both are headless-friendly (no browser consent screen
-  to click through on a server) and functionally equivalent.
-- **Retries**: same retry counts/delays as the original node settings
-  (Sheets: 2 tries/2s, Gemini: 3 tries/3s, PDF: 2 tries/2s, Email: 2 tries/3s).
-- **Failure behavior**: if Sheets logging or Gemini generation fails after
-  retries, the pipeline stops (matches n8n's default "halt on node error").
-  Email and Telegram run independently at the end, so one failing doesn't
-  block the other — same as the two parallel branches in the original graph.
-- **Telegram is optional**: if you leave the token/chat ID blank, that step
-  is skipped with a warning log instead of failing the whole submission.
+### 1. Clone and configure
+
+```bash
+git clone https://github.com/NITHESH-0010/resume-automation.git
+cd resume-automation
+cp .env.example .env
+```
+
+Fill in `.env` with your own credentials:
+
+| Variable | Source |
+|---|---|
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com) |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | Google Cloud Console → Service Accounts (JSON key) |
+| `GOOGLE_SHEET_ID` | Your target Sheet's URL |
+| `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` | [App Passwords](https://myaccount.google.com/apppasswords) |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | `@BotFather` / `@userinfobot` on Telegram |
+
+Place your downloaded service account key as `service-account.json` in
+the project root, and share your target Google Sheet with that
+account's `client_email` (Editor access).
+
+### 2. Run locally
+
+```bash
+pip install -r requirements.txt
+
+# PDF conversion needs Gotenberg running separately:
+docker run --rm -p 3000:3000 gotenberg/gotenberg:8
+# then in .env: GOTENBERG_URL=http://localhost:3000
+
+uvicorn app.main:app --reload --port 8000
+```
+
+Visit `http://localhost:8000` — the form and API are served from the
+same origin.
+
+### 3. Run with Docker Compose (app + Gotenberg together)
+
+```bash
+docker compose up --build
+```
+
+## Environment variables
+
+See [`.env.example`](.env.example) for the full list with inline
+explanations of where to obtain each value.
+
+## Security notes
+
+- `.env` and `service-account.json` are gitignored — never commit either
+- Gmail delivery uses an App Password (requires 2FA), not the account's
+  main password
+- Sheets access uses a scoped service account, not a personal OAuth token
+
+## License
+Copyright (c) 2026 NITHESH
