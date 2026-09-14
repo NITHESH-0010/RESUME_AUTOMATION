@@ -36,7 +36,7 @@ async def process_submission(data: dict) -> None:
         logger.exception("Gemini generation failed for %s — aborting.", submission_id)
         return
 
-    # Step 3: convert HTML to PDF via Gotenberg.
+    # Step 3: convert HTML to PDF via WeasyPrint.
     try:
         pdf_bytes = await html_to_pdf(html)
     except Exception:

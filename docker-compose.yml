@@ -6,14 +6,8 @@ services:
     env_file:
       - .env
     environment:
+      # Override .env's local-run default for the containerized network.
       GOOGLE_SERVICE_ACCOUNT_FILE: /app/service-account.json
-      GOTENBERG_URL: http://gotenberg:3000
     volumes:
       - ./service-account.json:/app/service-account.json:ro
-    depends_on:
-      - gotenberg
-    restart: unless-stopped
-
-  gotenberg:
-    image: gotenberg/gotenberg:8
     restart: unless-stopped

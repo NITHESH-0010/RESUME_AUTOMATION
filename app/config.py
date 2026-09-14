@@ -38,7 +38,5 @@ class Settings:
     telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
 
-    gotenberg_url: str = os.getenv("GOTENBERG_URL", "http://gotenberg:3000")
-
 
 settings = Settings()
