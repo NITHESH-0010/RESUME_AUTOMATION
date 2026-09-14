@@ -33,7 +33,7 @@ class Settings:
     google_sheet_name: str = os.getenv("GOOGLE_SHEET_NAME", "Sheet1")
 
     gmail_address: str = os.getenv("GMAIL_ADDRESS", "")
-    gmail_app_password: str = os.getenv("GMAIL_APP_PASSWORD", "")
+    brevo_api_key: str = os.getenv("BREVO_API_KEY", "")
 
     telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
